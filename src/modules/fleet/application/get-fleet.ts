@@ -14,8 +14,8 @@ export interface GetFleetInput {
 export function createGetFleetUseCase(deps: GetFleetDeps) {
   return async function getFleet(input: GetFleetInput): Promise<FleetWithDrivers> {
     const fleet = await deps.fleetRepository.findByChainFleetId(input.chainFleetId, {
-      includeRemoved: input.includeRemoved,
-      driverLimit: input.driverLimit,
+      ...(input.includeRemoved !== undefined && { includeRemoved: input.includeRemoved }),
+      ...(input.driverLimit !== undefined && { driverLimit: input.driverLimit }),
     });
     if (!fleet) {
       throw new FleetNotFoundError();

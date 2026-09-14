@@ -43,7 +43,9 @@ export function createListNotificationsUseCase(deps: ListNotificationsDeps) {
       ...(input.before && { before: new Date(input.before) }),
     });
 
-    const nextCursor = items.length === limit ? items[items.length - 1].createdAt.toISOString() : null;
+    const lastItem = items[items.length - 1];
+    const nextCursor =
+      items.length === limit && lastItem ? lastItem.createdAt.toISOString() : null;
 
     return { items, nextCursor, limit };
   };

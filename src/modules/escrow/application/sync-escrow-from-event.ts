@@ -84,6 +84,13 @@ export function createSyncEscrowFromEventUseCase(deps: SyncEscrowFromEventDeps) 
             status: 'REFUNDED',
             refundedAt: event.closedAt,
           });
+        } else if (record.status === 'LOCKED') {
+          // A split dispute resolution can legitimately leave the escrow
+          // LOCKED rather than terminal (backend issue #38) — the prior
+          // code only modeled the RELEASED/REFUNDED branches and silently
+          // no-op'd here, leaving the read model stuck on the stale PAUSED
+          // status from the original delivery_disputed event.
+          await deps.escrowRepository.updateStatus(chainDeliveryId, { status: 'LOCKED' });
         }
         return;
       }
