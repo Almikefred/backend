@@ -10,6 +10,7 @@ function testUser(overrides: Partial<User> = {}): User {
     email: 'user@example.com',
     passwordHash: '$2b$12$abcdefghijklmnopqrstuv',
     role: 'CUSTOMER',
+    tokenVersion: 0,
     emailVerifiedAt: null,
     createdAt: new Date(),
     ...overrides,
@@ -26,6 +27,16 @@ describe('createJwtTokenService', () => {
 
     expect(claims.sub).toBe(user.id);
     expect(claims.role).toBe('ADMIN');
+  });
+
+  it('embeds the user\'s current tokenVersion in the access token (security issue #12)', () => {
+    const tokenService = createJwtTokenService();
+    const user = testUser({ tokenVersion: 3 });
+
+    const token = tokenService.issueAccessToken(user);
+    const claims = verifyAccessToken(token);
+
+    expect(claims.tokenVersion).toBe(3);
   });
 
   it('issues a refresh token whose hash matches hashToken(token) and can be verified back to the user', () => {

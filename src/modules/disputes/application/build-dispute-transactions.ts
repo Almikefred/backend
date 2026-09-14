@@ -1,5 +1,6 @@
 import type {
   AddEvidenceHashTxInput,
+  DisputeRepository,
   DisputeTransactionBuilder,
   RaiseDisputeTxInput,
   ResolveDisputeSplitFundsTxInput,
@@ -8,6 +9,12 @@ import type {
 
 export interface BuildDisputeTransactionsDeps {
   transactionBuilder: DisputeTransactionBuilder;
+  /** Optional so every other build* call here stays a pure delegation with
+   * no persistence dependency — only `buildResolveDisputeSplitFundsTransaction`
+   * uses it, to record the proposed `senderShareBps` (backend issue #40).
+   * Omitting it (e.g. in tests that don't care about that side effect)
+   * simply skips the recording rather than throwing. */
+  disputeRepository?: DisputeRepository;
 }
 
 /** Five thin delegations to the `DisputeTransactionBuilder` port — same "no
@@ -27,8 +34,15 @@ export function createBuildDisputeTransactionsUseCases(deps: BuildDisputeTransac
     buildResolveDisputePayDriverTransaction: (input: ResolveDisputeTxInput): Promise<string> =>
       deps.transactionBuilder.buildResolveDisputePayDriver(input),
 
-    buildResolveDisputeSplitFundsTransaction: (
+    buildResolveDisputeSplitFundsTransaction: async (
       input: ResolveDisputeSplitFundsTxInput,
-    ): Promise<string> => deps.transactionBuilder.buildResolveDisputeSplitFunds(input),
+    ): Promise<string> => {
+      const xdr = await deps.transactionBuilder.buildResolveDisputeSplitFunds(input);
+      await deps.disputeRepository?.recordProposedSenderShareBps(
+        input.chainDeliveryId,
+        input.senderShareBps,
+      );
+      return xdr;
+    },
   };
 }

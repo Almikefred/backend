@@ -20,6 +20,14 @@ export interface NotificationsUseCases {
 function serializeNotification(notification: Notification) {
   return {
     id: notification.id,
+    // `notification.channel` is the column's real 3-variant Prisma enum
+    // value, and the response schema now mirrors it exactly (see
+    // `interface/schemas.ts`'s doc comment) — a persisted SMS/PUSH row
+    // (seed data, or any other direct write) serializes successfully
+    // instead of failing this route's Zod response validation. Whether a
+    // channel can actually be *sent* is a separate question this response
+    // makes no claim about — see `sendNotification`'s explicit channel
+    // check and `NotificationSender`'s doc comment.
     channel: notification.channel,
     type: notification.type,
     payload: notification.payload,

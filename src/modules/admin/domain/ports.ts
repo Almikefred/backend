@@ -55,3 +55,26 @@ export interface AuditLogRepository {
   record(input: RecordAuditLogInput): Promise<void>;
   list(filter: ListAuditLogFilter): Promise<AuditLogEntry[]>;
 }
+
+/**
+ * Invalidates a user's existing sessions — called by `updateUserRole` after
+ * a role change (security issue #12), same "genuinely shared identity
+ * state" rationale as `UserRoleRepository` above. Deliberately narrower
+ * than reaching for `auth`'s own `RefreshTokenRepository`/`TokenService`
+ * ports or use cases: `admin` doesn't need (and shouldn't take on) the rest
+ * of that module's surface for this one cross-cutting concern, so its
+ * Prisma-backed implementation touches the shared `refresh_tokens` and
+ * `users` tables directly instead.
+ */
+export interface SessionRevoker {
+  /**
+   * Revokes every outstanding refresh token for this user (so a stale
+   * refresh token can't silently mint a new access token carrying the old
+   * privileges) and bumps `users.token_version` (so any access token
+   * already issued — which a refresh-token revocation alone can't touch —
+   * stops passing the shared HTTP auth guard's version check on its very
+   * next request, rather than remaining valid for the rest of its
+   * ~15-minute lifetime).
+   */
+  revokeAllForUser(userId: string): Promise<void>;
+}

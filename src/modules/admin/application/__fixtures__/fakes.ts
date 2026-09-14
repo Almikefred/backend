@@ -5,12 +5,9 @@ import type {
   AuditLogRepository,
   DisputeReviewItem,
   DisputeReviewReader,
+  SessionRevoker,
   UserRoleRepository,
 } from '../../domain/index.js';
-
-export interface SessionRevoker {
-  revokeAllForUser(userId: string): Promise<void>;
-}
 
 export function createFakeDisputeReviewReader(): DisputeReviewReader & {
   seed(items: DisputeReviewItem[]): void;

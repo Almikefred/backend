@@ -42,7 +42,7 @@ All `/api/v1/users/*` routes require authentication; unauthenticated requests ge
 | `POST` | `/api/v1/transactions/build/mark-in-transit` | Unsigned XDR for `mark_in_transit` — the assigned driver only |
 | `POST` | `/api/v1/transactions/build/confirm-delivery` | Unsigned XDR for `confirm_delivery` — the recipient only |
 | `POST` | `/api/v1/transactions/build/cancel-delivery` | Unsigned XDR for `cancel_delivery` — the sender only |
-| `POST` | `/api/v1/transactions/build/raise-dispute` | Unsigned XDR for `raise_dispute` — sender or recipient |
+| `POST` | `/api/v1/transactions/build/raise-delivery-dispute` | Unsigned XDR for `delivery_contract.raise_dispute` — sender or recipient. Distinct from the `disputes` module's own `POST /transactions/build/raise-dispute` (`dispute_resolution_contract.raise_dispute`, the richer Layer B arbitration-case path) — the two previously collided under the identical path, crashing `buildApp()`. |
 
 All `/api/v1/transactions/build/*` routes require authentication (anti-abuse — each call does real RPC work: an account fetch and a full simulate/prepare). All return `{ "data": { "xdr": "<unsigned envelope>" } }`. `GET /deliveries*` is public — it mirrors public on-chain state, like a block explorer. If `DELIVERY_CONTRACT_ID` isn't configured for the running environment (blank by default, see `.env.example`), the build endpoints return `502 BLOCKCHAIN_ERROR` with a clear message rather than a generic failure.
 

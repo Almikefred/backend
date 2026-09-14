@@ -153,8 +153,24 @@ export function createDeliveriesRoutes(useCases: DeliveriesUseCases): FastifyPlu
       },
     );
 
+    // Deliberately `raise-delivery-dispute`, not `raise-dispute`: this builds
+    // an invocation of `delivery_contract.raise_dispute` (Layer A — pauses
+    // the delivery/escrow, cross-calling `escrow_contract.raise_dispute`;
+    // PHASE_1_DOMAIN_ANALYSIS.md §10's call graph), a genuinely different
+    // on-chain action from the `disputes` module's own
+    // `POST /transactions/build/raise-dispute`, which invokes
+    // `dispute_resolution_contract.raise_dispute` (Layer B — creates the
+    // richer arbitration `DisputeCase` with evidence support, and itself
+    // cross-calls this same `delivery_contract.raise_dispute` when
+    // applicable). The two routes collided under the identical path before
+    // this rename (`FST_ERR_DUPLICATED_ROUTE`, crashing `buildApp()`) — see
+    // `tests/e2e/app.e2e.spec.ts`'s regression test. `disputes` keeps the
+    // shorter, canonical path since it owns the complete dispute lifecycle
+    // (raise → evidence → resolve) as one cohesive, already-tested REST
+    // surface; this endpoint's request/response shape and behavior are
+    // otherwise completely unchanged.
     app.post(
-      '/transactions/build/raise-dispute',
+      '/transactions/build/raise-delivery-dispute',
       {
         preHandler: authenticate,
         schema: { body: raiseDisputeBodySchema, response: { 200: transactionResponseSchema } },
