@@ -60,6 +60,12 @@ COPY package.json ./
 # storage is also constructed in this process (see src/workers/index.ts).
 RUN mkdir -p /var/lib/fanilab/evidence /var/lib/fanilab/heartbeat \
     && chown -R node:node /var/lib/fanilab
+# Point at the directory just created/chowned above — the config default
+# (./storage/evidence) is a dev-only convenience and isn't writable by the
+# unprivileged `node` user here (see docs/DEPLOYMENT.md § Evidence Storage).
+# docker-compose.yml sets this too, but orchestrators that don't read that
+# file (e.g. Railway) need it baked into the image itself.
+ENV EVIDENCE_STORAGE_DIR=/var/lib/fanilab/evidence
 USER node
 # The worker has no HTTP surface, so liveness is a heartbeat file
 # (src/workers/index.ts) touched on every poll tick instead of an HTTP probe.
@@ -78,6 +84,12 @@ COPY package.json ./
 # created and owned up front since USER below switches away from root before
 # any request can trigger the mkdir this directory needs.
 RUN mkdir -p /var/lib/fanilab/evidence && chown -R node:node /var/lib/fanilab/evidence
+# Point at the directory just created/chowned above — the config default
+# (./storage/evidence) is a dev-only convenience and isn't writable by the
+# unprivileged `node` user here (see docs/DEPLOYMENT.md § Evidence Storage).
+# docker-compose.yml sets this too, but orchestrators that don't read that
+# file (e.g. Railway) need it baked into the image itself.
+ENV EVIDENCE_STORAGE_DIR=/var/lib/fanilab/evidence
 EXPOSE 3000
 USER node
 # Matches docs/DEPLOYMENT.md's instruction to point an orchestrator's
