@@ -8,7 +8,7 @@ import {
   createInMemoryEventStore,
 } from './__fixtures__/fakes.js';
 
-function setup() {
+function setup(overrides: { retentionWindowLedgers?: number } = {}) {
   const checkpointRepository = createInMemoryCheckpointRepository();
   const eventStore = createInMemoryEventStore();
   const eventSource = createFakeEventSource();
@@ -18,6 +18,7 @@ function setup() {
     eventStore,
     eventSource,
     eventPublisher,
+    ...overrides,
   });
   return { checkpointRepository, eventStore, eventSource, eventPublisher, pollContractEvents };
 }
@@ -102,6 +103,52 @@ describe('pollContractEvents', () => {
     expect(result.eventsFetched).toBe(1);
     expect(result.eventsInserted).toBe(0);
     expect(eventPublisher.published).toHaveLength(0);
+  });
+
+  it('clamps a stale checkpoint forward to the RPC retention floor instead of requesting an aged-out ledger', async () => {
+    const { checkpointRepository, eventSource, pollContractEvents } = setup({
+      retentionWindowLedgers: 1000,
+    });
+    checkpointRepository.seed({
+      contractName: 'escrow',
+      network: 'testnet',
+      lastLedgerSeq: 100n, // long expired given a 1000-ledger retention window
+      updatedAt: new Date(),
+    });
+    eventSource.latestLedger = 20_000;
+    eventSource.queueResponse({ events: [], latestLedgerSeen: 20_000 });
+
+    await pollContractEvents({
+      contractName: 'escrow',
+      contractId: 'C_ESCROW',
+      network: 'testnet',
+    });
+
+    // retentionFloor = 20_000 - 1000 + 1 = 19_001, which is far past
+    // checkpoint+1 (101) — the clamp, not the stale checkpoint, must win.
+    expect(eventSource.fetchEventsCalls).toMatchObject([{ startLedger: 19_001 }]);
+  });
+
+  it('does not clamp a checkpoint that is still within the retention window', async () => {
+    const { checkpointRepository, eventSource, pollContractEvents } = setup({
+      retentionWindowLedgers: 1000,
+    });
+    checkpointRepository.seed({
+      contractName: 'escrow',
+      network: 'testnet',
+      lastLedgerSeq: 4000n,
+      updatedAt: new Date(),
+    });
+    eventSource.latestLedger = 4200;
+    eventSource.queueResponse({ events: [], latestLedgerSeen: 4200 });
+
+    await pollContractEvents({
+      contractName: 'escrow',
+      contractId: 'C_ESCROW',
+      network: 'testnet',
+    });
+
+    expect(eventSource.fetchEventsCalls).toMatchObject([{ startLedger: 4001 }]);
   });
 
   it('advances the checkpoint even when a poll returns zero events', async () => {

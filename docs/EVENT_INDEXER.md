@@ -12,12 +12,13 @@ Soroban RPC exposes `getEvents(startLedger, filters)` — a pull API. There is n
 
 One `blockchain_checkpoints` row per `(contractName, network)`. Each poll cycle:
 
-1. Read `lastLedgerSeq` for the contract being polled.
-2. Call `getEvents({ startLedger: lastLedgerSeq + 1, filters: [{ contractIds: [contractId] }] })` via `SorobanClient.getEvents` (`src/blockchain/soroban-client.ts` — already wrapped in retry + circuit breaker, so indexer code doesn't need its own retry logic).
-3. Process every returned event (see Idempotent Ingestion, below).
-4. Advance `lastLedgerSeq` to the latest ledger actually returned, **only after** every event in that batch has been durably persisted — a crash mid-batch must not advance the checkpoint past unprocessed events.
+1. Read `lastLedgerSeq` for the contract being polled, and the chain's current tip via `SorobanClient.getLatestLedger`.
+2. Compute `startLedger`: `lastLedgerSeq + 1`, clamped forward to `latestLedger - INDEXER_EVENT_RETENTION_LEDGERS + 1` if that checkpoint has aged out of the RPC's retention window; or the chain tip itself if there's no checkpoint yet (a freshly deployed/redeployed contract starts from "now," not a backfill).
+3. Call `getEvents({ startLedger, filters: [{ contractIds: [contractId] }] })` via `SorobanClient.getEvents` (`src/blockchain/soroban-client.ts` — already wrapped in retry + circuit breaker, so indexer code doesn't need its own retry logic for network-level failures). If the RPC still rejects the range with -32600 (the configured retention estimate was wrong), `createSorobanEventSource` retries once against the exact valid range the RPC's own error reports.
+4. Process every returned event (see Idempotent Ingestion, below).
+5. Advance `lastLedgerSeq` to the latest ledger actually returned, **only after** every event in that batch has been durably persisted — a crash mid-batch must not advance the checkpoint past unprocessed events.
 
-Restart safety follows directly from this: the indexer always resumes from persisted state, never from "now."
+Restart safety follows directly from this: the indexer always resumes from persisted state, never from "now" — except when persisted state is stale enough that the RPC has already discarded it, in which case it resumes from as far back as the RPC (`INDEXER_EVENT_RETENTION_LEDGERS`) still allows rather than erroring every poll cycle.
 
 ## Idempotent Ingestion
 

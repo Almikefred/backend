@@ -77,6 +77,13 @@ const baseEnvSchema = z.object({
 
   INDEXER_POLL_INTERVAL_MS: z.coerce.number().int().positive().default(5_000),
   INDEXER_LAG_ALERT_LEDGERS: z.coerce.number().int().positive().default(50),
+  /** Conservative floor for how many ledgers back a Soroban RPC's getEvents
+   * is guaranteed to still serve — used to clamp a stale checkpoint forward
+   * instead of requesting a startLedger that's already aged out (RPC error
+   * -32600 "startLedger must be within the ledger range"). Default matches
+   * the most restrictive commonly-deployed retention (~24h at ~5s/ledger);
+   * raise it if SOROBAN_RPC_URL points at a provider with a longer window. */
+  INDEXER_EVENT_RETENTION_LEDGERS: z.coerce.number().int().positive().default(17_280),
 
   /** Local-filesystem root for dispute evidence files — see
    * src/modules/disputes/infrastructure/local-evidence-storage.ts. The

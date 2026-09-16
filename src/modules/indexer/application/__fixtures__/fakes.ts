@@ -66,11 +66,14 @@ export function createFakeEventPublisher(): EventPublisher & { published: Stored
 export function createFakeEventSource(): EventSource & {
   latestLedger: number;
   queueResponse(response: FetchEventsResult): void;
+  fetchEventsCalls: Array<{ contractId: string; startLedger: number }>;
 } {
   const responses: FetchEventsResult[] = [];
+  const fetchEventsCalls: Array<{ contractId: string; startLedger: number }> = [];
   let latestLedger = 1000;
 
   return {
+    fetchEventsCalls,
     get latestLedger() {
       return latestLedger;
     },
@@ -83,7 +86,8 @@ export function createFakeEventSource(): EventSource & {
     async getLatestLedger() {
       return latestLedger;
     },
-    async fetchEvents(_input) {
+    async fetchEvents(input) {
+      fetchEventsCalls.push(input);
       const next = responses.shift();
       return next ?? { events: [], latestLedgerSeen: latestLedger };
     },
