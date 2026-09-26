@@ -115,5 +115,5 @@ See [`CONTRIBUTING.md`](./CONTRIBUTING.md) and [`CODE_OF_CONDUCT.md`](./CODE_OF_
 
 ## Handsoff notes
 
-<!-- handsoff-issue-200 -->
-- #200: Missing authentication on POST /transactions/build/add-evidence-hash
+<!-- handsoff-issue-180 -->
+- #180: Missing authentication on POST /transactions/build/assign-driver
