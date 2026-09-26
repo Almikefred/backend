@@ -201,6 +201,7 @@ CREATE TABLE "blockchain_events" (
     "ledger_closed_at" TIMESTAMP(3) NOT NULL,
     "ingested_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "processed_at" TIMESTAMP(3),
+    "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "blockchain_events_pkey" PRIMARY KEY ("id")
 );
@@ -264,7 +265,7 @@ CREATE INDEX "deliveries_driver_address_idx" ON "deliveries"("driver_address");
 CREATE INDEX "deliveries_status_idx" ON "deliveries"("status");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "escrows_chain_delivery_id_key" ON "escrows"("chain_delivery_id");
+CREATE UNIQUE INDEX "blockchain_events_rpc_event_id_key" ON "blockchain_events"("rpc_event_id");
 
 -- CreateIndex
 CREATE INDEX "escrows_sender_address_idx" ON "escrows"("sender_address");
@@ -327,10 +328,10 @@ CREATE INDEX "notifications_user_id_idx" ON "notifications"("user_id");
 CREATE INDEX "notifications_status_idx" ON "notifications"("status");
 
 -- CreateIndex
-CREATE INDEX "audit_logs_entity_type_entity_id_idx" ON "audit_logs"("entity_type", "entity_id");
+CREATE INDEX "audit_logs_actor_id_idx" ON "audit_logs"("actor_id");
 
 -- CreateIndex
-CREATE INDEX "audit_logs_actor_id_idx" ON "audit_logs"("actor_id");
+CREATE INDEX "audit_logs_entity_type_entity_id_idx" ON "audit_logs"("entity_type", "entity_id");
 
 -- AddForeignKey
 ALTER TABLE "refresh_tokens" ADD CONSTRAINT "refresh_tokens_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
