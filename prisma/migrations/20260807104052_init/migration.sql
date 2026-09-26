@@ -58,6 +58,7 @@ CREATE TABLE "wallet_addresses" (
     "is_primary" BOOLEAN NOT NULL DEFAULT false,
     "verified_at" TIMESTAMP(3),
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "wallet_addresses_pkey" PRIMARY KEY ("id")
 );
@@ -267,16 +268,58 @@ CREATE INDEX "deliveries_status_idx" ON "deliveries"("status");
 CREATE UNIQUE INDEX "blockchain_events_rpc_event_id_key" ON "blockchain_events"("rpc_event_id");
 
 -- CreateIndex
-CREATE INDEX "blockchain_events_contract_name_network_idx" ON "blockchain_events"("contract_name", "network");
+CREATE INDEX "escrows_sender_address_idx" ON "escrows"("sender_address");
+
+-- CreateIndex
+CREATE INDEX "escrows_recipient_address_idx" ON "escrows"("recipient_address");
+
+-- CreateIndex
+CREATE INDEX "escrows_driver_address_idx" ON "escrows"("driver_address");
+
+-- CreateIndex
+CREATE INDEX "escrows_status_idx" ON "escrows"("status");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "disputes_chain_delivery_id_key" ON "disputes"("chain_delivery_id");
+
+-- CreateIndex
+CREATE INDEX "disputes_status_idx" ON "disputes"("status");
+
+-- CreateIndex
+CREATE INDEX "evidence_dispute_id_idx" ON "evidence"("dispute_id");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "fleets_chain_fleet_id_key" ON "fleets"("chain_fleet_id");
+
+-- CreateIndex
+CREATE INDEX "fleets_owner_id_idx" ON "fleets"("owner_id");
+
+-- CreateIndex
+CREATE INDEX "fleets_owner_address_idx" ON "fleets"("owner_address");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "fleet_drivers_fleet_id_driver_address_key" ON "fleet_drivers"("fleet_id", "driver_address");
+
+-- CreateIndex
+CREATE INDEX "fleet_drivers_driver_address_idx" ON "fleet_drivers"("driver_address");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "driver_profiles_address_key" ON "driver_profiles"("address");
+
+-- CreateIndex
+CREATE INDEX "driver_profiles_tier_idx" ON "driver_profiles"("tier");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "blockchain_checkpoints_contract_name_network_key" ON "blockchain_checkpoints"("contract_name", "network");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "blockchain_events_contract_name_network_rpc_event_id_key" ON "blockchain_events"("contract_name", "network", "rpc_event_id");
 
 -- CreateIndex
 CREATE INDEX "blockchain_events_ledger_seq_idx" ON "blockchain_events"("ledger_seq");
 
 -- CreateIndex
 CREATE INDEX "blockchain_events_processed_at_idx" ON "blockchain_events"("processed_at");
-
--- CreateIndex
-CREATE UNIQUE INDEX "blockchain_checkpoints_contract_name_network_key" ON "blockchain_checkpoints"("contract_name", "network");
 
 -- CreateIndex
 CREATE INDEX "notifications_user_id_idx" ON "notifications"("user_id");
